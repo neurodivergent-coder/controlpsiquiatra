@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Evaluación Psiquiátrica - Dr. Humberto Nicolini</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        box-sizing: border-box;
+      }
+
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      .question-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #3b82f6;
+      }
+
+      .scale-button {
+        transition: all 0.2s ease;
+      }
+
+      .scale-button:hover {
+        transform: scale(1.1);
+      }
+
+      .scale-button.selected {
+        transform: scale(1.15);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .progress-bar {
+        transition: width 0.5s ease;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 400px;
+        margin: 20px 0;
+      }
+    </style>
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+    </style>
+    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+    <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-screen"
+  >
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-600">
+      <div class="container mx-auto px-6 py-4">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center space-x-4">
+            <div
+              class="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center"
+            >
+              <span class="text-white font-bold text-xl">🧠</span>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800">
+                Dr. Humberto Nicolini
+              </h1>
+              <p class="text-sm text-gray-600">
+                Psiquiatra por parte del Consejo Mexicano de Psiquiatría
+              </p>
+              <p class="text-sm text-gray-600">
+                Doctorado en Ciencias Médicas - UNAM
+              </p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-sm text-gray-600" id="currentDate"></p>
+            <p class="text-lg font-semibold text-blue-600" id="currentTime"></p>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="container mx-auto px-6 py-8">
+      <!-- Navigation -->
+      <nav class="mb-8">
+        <div class="flex flex-wrap gap-4 justify-center">
+          <button
+            onclick="showSection('questionnaire')"
+            class="nav-item bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg"
+            id="nav-questionnaire"
+          >
+            📋 Cuestionario de Evaluación
+          </button>
+          <button
+            onclick="showSection('results')"
+            class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
+            id="nav-results"
+          >
+            📊 Resultados y Gráficos
+          </button>
+          <button
+            onclick="showSection('history')"
+            class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
+            id="nav-history"
+          >
+            📈 Historial de Evaluaciones
+          </button>
+        </div>
+      </nav>
+      <!-- Questionnaire Section -->
+      <div id="questionnaire-section" class="section fade-in">
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+          <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">
+              📋 Evaluación Psiquiátrica
+            </h2>
+            <p class="text-gray-600">
+              Responde cada pregunta según tu experiencia en las últimas 2
+              semanas
+            </p>
+            <div class="mt-4">
+              <div class="bg-gray-200 rounded-full h-3 w-full max-w-md mx-auto">
+                <div
+                  id="progressBar"
+                  class="progress-bar bg-blue-600 h-3 rounded-full"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <p class="text-sm text-gray-600 mt-2">
+                Pregunta <span id="currentQuestion">0</span> de
+                <span id="totalQuestions">0</span>
+              </p>
+            </div>
+          </div>
+          <!-- Patient Info -->
+          <div
+            id="patientInfo"
+            class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-200"
+          >
+            <h3 class="text-lg font-bold text-blue-800 mb-4">
+              👤 Información del Paciente
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                id="patientName"
+                placeholder="Nombre completo"
+                class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="number"
+                id="patientAge"
+                placeholder="Edad"
+                class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="date"
+                id="evaluationDate"
+                class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <!-- Questions Container -->
+          <div id="questionsContainer">
+            <!-- Questions will be generated here -->
+          </div>
+          <!-- Navigation Buttons -->
+          <div class="flex justify-between mt-8">
+            <button
+              id="prevBtn"
+              onclick="previousQuestion()"
+              class="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50"
+              disabled
+            >
+              ← Anterior
+            </button>
+            <button
+              id="nextBtn"
+              onclick="nextQuestion()"
+              class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
+            >
+              Siguiente →
+            </button>
+            <button
+              id="finishBtn"
+              onclick="finishEvaluation()"
+              class="hidden bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
+            >
+              ✅ Finalizar Evaluación
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Results Section -->
+      <div id="results-section" class="section hidden">
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+          <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
+            📊 Resultados de la Evaluación
+          </h2>
+          <!-- Current Results -->
+          <div id="currentResults" class="mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- Scores Summary -->
+              <div
+                class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200"
+              >
+                <h3 class="text-xl font-bold text-blue-800 mb-4">
+                  📈 Puntuaciones por Categoría
+                </h3>
+                <div id="scoresDisplay" class="space-y-4">
+                  <!-- Scores will be displayed here -->
+                </div>
+              </div>
+              <!-- Medication Recommendations -->
+              <div
+                class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200"
+              >
+                <h3 class="text-xl font-bold text-green-800 mb-4">
+                  💊 Recomendaciones de Medicación
+                </h3>
+                <div id="medicationRecommendations" class="space-y-3">
+                  <!-- Recommendations will be displayed here -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Bar Chart -->
+            <div
+              class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
+            >
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                📊 Gráfico de Barras - Puntuaciones
+              </h3>
+              <div class="chart-container">
+                <canvas id="barChart"></canvas>
+              </div>
+            </div>
+            <!-- Pie Chart -->
+            <div
+              class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
+            >
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                🥧 Distribución de Síntomas
+              </h3>
+              <div class="chart-container">
+                <canvas id="pieChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- Export Options -->
+          <div class="mt-8 text-center">
+            <button
+              onclick="exportResults()"
+              class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors mr-4"
+            >
+              📄 Exportar Resultados
+            </button>
+            <button
+              onclick="printResults()"
+              class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
+            >
+              🖨️ Imprimir Reporte
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- History Section -->
+      <div id="history-section" class="section hidden">
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+          <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
+            📈 Historial de Evaluaciones
+          </h2>
+          <!-- Trend Chart -->
+          <div class="mb-8">
+            <div
+              class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200"
+            >
+              <h3 class="text-xl font-bold text-purple-800 mb-4">
+                📈 Tendencias a lo Largo del Tiempo
+              </h3>
+              <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- History List -->
+          <div id="historyList" class="space-y-4">
+            <!-- History items will be displayed here -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Global variables
+      let currentQuestionIndex = 0;
+      let answers = {};
+      let evaluations = [];
+      let barChart, pieChart, trendChart;
+
+      // Questionnaire data - Dr. Humberto Nicolini's Questions
+      const questionnaire = {
+        categories: {
+          general: {
+            name: "Evaluación General",
+            color: "#3b82f6",
+            questions: [
+              "¿Cómo te sientes en general?",
+              "¿Cómo has estado durmiendo?",
+              "¿Cómo está tu apetito?",
+              "¿Cómo están tus niveles de energía?",
+              "¿Cómo está tu concentración?",
+              "¿Cómo está tu estado de ánimo?",
+              "¿Has tenido pensamientos negativos?",
+              "¿Cómo están tus relaciones interpersonales?",
+              "¿Has tenido ansiedad o nerviosismo?",
+              "¿Has tenido cambios en tu peso?",
+              "¿Cómo está tu motivación para actividades diarias?",
+              "¿Has tenido dolores de cabeza o tensión?",
+              "¿Cómo manejas el estrés actualmente?",
+              "¿Has tenido cambios en tu libido?",
+              "¿Cómo está tu autoestima?",
+              "¿Has tenido pensamientos de hacerte daño?",
+              "¿Cómo está tu capacidad para tomar decisiones?",
+              "¿Has tenido episodios de llanto?",
+              "¿Cómo está tu paciencia con otros?",
+              "¿Has tenido sensación de vacío o tristeza?",
+              "¿Cómo está tu capacidad para disfrutar actividades?",
+              "¿Has tenido problemas de memoria?",
+              "¿Cómo está tu nivel de irritabilidad?",
+              "¿Has tenido cambios en tus patrones de sueño?",
+              "¿Cómo está tu esperanza hacia el futuro?",
+            ],
+          },
+        },
+      };
+
+      // Flatten questions for easier navigation
+      let allQuestions = [];
+      Object.keys(questionnaire.categories).forEach((categoryKey) => {
+        const category = questionnaire.categories[categoryKey];
+        category.questions.forEach((question, index) => {
+          allQuestions.push({
+            category: categoryKey,
+            categoryName: category.name,
+            question: question,
+            questionIndex: index,
+            color: category.color,
+          });
+        });
+      });
+
+      // Initialize the application
+      function init() {
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+        loadEvaluations();
+        setupQuestionnaire();
+        showSection("questionnaire");
+
+        // Set today's date
+        document.getElementById("evaluationDate").value = new Date()
+          .toISOString()
+          .split("T")[0];
+      }
+
+      // Update date and time
+      function updateDateTime() {
+        const now = new Date();
+        document.getElementById("currentDate").textContent =
+          now.toLocaleDateString("es-ES", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        document.getElementById("currentTime").textContent =
+          now.toLocaleTimeString("es-ES", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+      }
+
+      // Setup questionnaire
+      function setupQuestionnaire() {
+        document.getElementById("totalQuestions").textContent =
+          allQuestions.length;
+        displayCurrentQuestion();
+      }
+
+      // Display current question
+      function displayCurrentQuestion() {
+        const container = document.getElementById("questionsContainer");
+        const question = allQuestions[currentQuestionIndex];
+
+        document.getElementById("currentQuestion").textContent =
+          currentQuestionIndex + 1;
+        updateProgressBar();
+
+        container.innerHTML = `
+                <div class="question-card bg-white p-8 rounded-xl border-2 shadow-lg fade-in" style="border-left-color: ${
+                  question.color
+                }">
+                    <div class="mb-6">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-4 h-4 rounded-full" style="background-color: ${
+                              question.color
+                            }"></div>
+                            <span class="text-sm font-semibold text-gray-600 uppercase tracking-wide">${
+                              question.categoryName
+                            }</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Pregunta ${
+                          currentQuestionIndex + 1
+                        }</h3>
+                        <p class="text-lg text-gray-700">${
+                          question.question
+                        }</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        ${generateScaleButtons(currentQuestionIndex)}
+                    </div>
+                    
+                    <div class="mt-6 text-center">
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span>Nunca / Nada</span>
+                            <span>Siempre / Mucho</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        // Update navigation buttons
+        document.getElementById("prevBtn").disabled =
+          currentQuestionIndex === 0;
+
+        if (currentQuestionIndex === allQuestions.length - 1) {
+          document.getElementById("nextBtn").classList.add("hidden");
+          document.getElementById("finishBtn").classList.remove("hidden");
+        } else {
+          document.getElementById("nextBtn").classList.remove("hidden");
+          document.getElementById("finishBtn").classList.add("hidden");
+        }
+      }
+
+      // Generate scale buttons (0-3 scale)
+      function generateScaleButtons(questionIndex) {
+        const scales = [
+          { value: 0, label: "0", desc: "Nunca" },
+          { value: 1, label: "1", desc: "Poco" },
+          { value: 2, label: "2", desc: "Bastante" },
+          { value: 3, label: "3", desc: "Mucho" },
+        ];
+
+        return scales
+          .map((scale) => {
+            const isSelected = answers[questionIndex] === scale.value;
+            return `
+                    <button onclick="selectAnswer(${questionIndex}, ${
+              scale.value
+            })" 
+                            class="scale-button ${
+                              isSelected ? "selected" : ""
+                            } p-4 rounded-xl border-2 text-center transition-all hover:shadow-lg ${
+              isSelected
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+            }">
+                        <div class="text-2xl font-bold mb-1">${
+                          scale.label
+                        }</div>
+                        <div class="text-xs">${scale.desc}</div>
+                    </button>
+                `;
+          })
+          .join("");
+      }
+
+      // Select answer
+      function selectAnswer(questionIndex, value) {
+        answers[questionIndex] = value;
+        displayCurrentQuestion(); // Refresh to show selection
+      }
+
+      // Update progress bar
+      function updateProgressBar() {
+        const progress =
+          ((currentQuestionIndex + 1) / allQuestions.length) * 100;
+        document.getElementById("progressBar").style.width = progress + "%";
+      }
+
+      // Navigation functions
+      function nextQuestion() {
+        if (answers[currentQuestionIndex] === undefined) {
+          alert("⚠️ Por favor responde la pregunta actual antes de continuar");
+          return;
+        }
+
+        if (currentQuestionIndex < allQuestions.length - 1) {
+          currentQuestionIndex++;
+          displayCurrentQuestion();
+        }
+      }
+
+      function previousQuestion() {
+        if (currentQuestionIndex > 0) {
+          currentQuestionIndex--;
+          displayCurrentQuestion();
+        }
+      }
+
+      // Finish evaluation
+      function finishEvaluation() {
+        if (answers[currentQuestionIndex] === undefined) {
+          alert("⚠️ Por favor responde la pregunta actual antes de finalizar");
+          return;
+        }
+
+        const patientName = document.getElementById("patientName").value.trim();
+        const patientAge = document.getElementById("patientAge").value;
+        const evaluationDate = document.getElementById("evaluationDate").value;
+
+        if (!patientName || !patientAge || !evaluationDate) {
+          alert("⚠️ Por favor completa la información del paciente");
+          return;
+        }
+
+        // Calculate scores
+        const scores = calculateScores();
+
+        // Save evaluation
+        const evaluation = {
+          id: Date.now(),
+          patientName,
+          patientAge: parseInt(patientAge),
+          date: evaluationDate,
+          answers: { ...answers },
+          scores: scores,
+          timestamp: new Date().toISOString(),
+        };
+
+        evaluations.push(evaluation);
+        saveEvaluations();
+
+        // Show results
+        displayResults(evaluation);
+        showSection("results");
+
+        alert("✅ Evaluación completada exitosamente");
+      }
+
+      // Calculate scores by category
+      function calculateScores() {
+        const scores = {};
+
+        Object.keys(questionnaire.categories).forEach((categoryKey) => {
+          const category = questionnaire.categories[categoryKey];
+          let totalScore = 0;
+          let questionCount = 0;
+
+          allQuestions.forEach((q, index) => {
+            if (q.category === categoryKey && answers[index] !== undefined) {
+              totalScore += answers[index];
+              questionCount++;
+            }
+          });
+
+          scores[categoryKey] = {
+            name: category.name,
+            total: totalScore,
+            average:
+              questionCount > 0 ? (totalScore / questionCount).toFixed(1) : 0,
+            percentage:
+              questionCount > 0
+                ? ((totalScore / (questionCount * 3)) * 100).toFixed(1)
+                : 0,
+            color: category.color,
+            questionCount: questionCount,
+          };
+        });
+
+        return scores;
+      }
+
+      // Display results
+      function displayResults(evaluation) {
+        displayScores(evaluation.scores);
+        displayMedicationRecommendations(evaluation.scores);
+        createCharts(evaluation.scores);
+      }
+
+      // Display scores
+      function displayScores(scores) {
+        const container = document.getElementById("scoresDisplay");
+
+        container.innerHTML = Object.values(scores)
+          .map((score) => {
+            const severity = getSeverityLevel(parseFloat(score.percentage));
+            return `
+                    <div class="p-4 bg-white rounded-lg border-l-4 shadow-sm" style="border-left-color: ${score.color}">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-bold text-gray-800">${score.name}</h4>
+                            <span class="text-2xl font-bold" style="color: ${score.color}">${score.total}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 mb-2">
+                            Promedio: ${score.average} | Porcentaje: ${score.percentage}%
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-2 rounded-full transition-all duration-1000" 
+                                 style="width: ${score.percentage}%; background-color: ${score.color}"></div>
+                        </div>
+                        <div class="mt-2 text-xs font-semibold ${severity.class}">${severity.label}</div>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      // Get severity level
+      function getSeverityLevel(percentage) {
+        if (percentage <= 25) return { label: "Leve", class: "text-green-600" };
+        if (percentage <= 50)
+          return { label: "Moderado", class: "text-yellow-600" };
+        if (percentage <= 75)
+          return { label: "Alto", class: "text-orange-600" };
+        return { label: "Severo", class: "text-red-600" };
+      }
+
+      // Display medication recommendations
+      function displayMedicationRecommendations(scores) {
+        const container = document.getElementById("medicationRecommendations");
+        const recommendations = [];
+
+        // General evaluation recommendations based on total score
+        const generalScore = scores.general
+          ? parseFloat(scores.general.percentage)
+          : 0;
+        const totalScore = scores.general ? scores.general.total : 0;
+
+        if (totalScore <= 25) {
+          recommendations.push({
+            type: "Estado Leve (0-25 puntos)",
+            medication:
+              "Terapia psicológica, ejercicio regular, técnicas de relajación",
+            color: "green",
+          });
+        } else if (totalScore <= 45) {
+          recommendations.push({
+            type: "Estado Moderado (26-45 puntos)",
+            medication:
+              "ISRS: Sertralina 50mg/día + Terapia cognitivo-conductual",
+            color: "yellow",
+          });
+        } else if (totalScore <= 60) {
+          recommendations.push({
+            type: "Estado Moderado-Severo (46-60 puntos)",
+            medication:
+              "ISRS: Sertralina 100mg/día + Ansiolítico PRN + Terapia intensiva",
+            color: "orange",
+          });
+        } else {
+          recommendations.push({
+            type: "Estado Severo (61+ puntos)",
+            medication:
+              "Combinación de antidepresivos + Estabilizador del ánimo + Seguimiento semanal",
+            color: "red",
+          });
+        }
+
+        // Additional recommendations based on specific high scores
+        if (generalScore > 70) {
+          recommendations.push({
+            type: "Seguimiento Urgente",
+            medication:
+              "Evaluación de riesgo suicida + Hospitalización si es necesario",
+            color: "red",
+          });
+        }
+
+        container.innerHTML = recommendations
+          .map(
+            (rec) => `
+                <div class="p-3 bg-white rounded-lg border-l-4 border-${rec.color}-500">
+                    <h5 class="font-bold text-gray-800">${rec.type}</h5>
+                    <p class="text-sm text-gray-600">${rec.medication}</p>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      // Create charts
+      function createCharts(scores) {
+        createBarChart(scores);
+        createPieChart(scores);
+      }
+
+      // Create bar chart
+      function createBarChart(scores) {
+        const ctx = document.getElementById("barChart").getContext("2d");
+
+        if (barChart) {
+          barChart.destroy();
+        }
+
+        const labels = Object.values(scores).map((s) => s.name);
+        const data = Object.values(scores).map((s) => s.total);
+        const colors = Object.values(scores).map((s) => s.color);
+
+        barChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Puntuación Total",
+                data: data,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false,
+              },
+              title: {
+                display: true,
+                text: "Puntuaciones por Categoría",
+                font: {
+                  size: 16,
+                  weight: "bold",
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: Math.max(...data) + 5,
+                ticks: {
+                  stepSize: 1,
+                },
+              },
+            },
+            animation: {
+              duration: 1500,
+              easing: "easeOutBounce",
+            },
+          },
+        });
+      }
+
+      // Create pie chart
+      function createPieChart(scores) {
+        const ctx = document.getElementById("pieChart").getContext("2d");
+
+        if (pieChart) {
+          pieChart.destroy();
+        }
+
+        const labels = Object.values(scores).map((s) => s.name);
+        const data = Object.values(scores).map((s) => parseFloat(s.percentage));
+        const colors = Object.values(scores).map((s) => s.color);
+
+        pieChart = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: data,
+                backgroundColor: colors,
+                borderColor: "#ffffff",
+                borderWidth: 3,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  padding: 20,
+                  usePointStyle: true,
+                  font: {
+                    size: 12,
+                  },
+                },
+              },
+              title: {
+                display: true,
+                text: "Distribución de Síntomas (%)",
+                font: {
+                  size: 16,
+                  weight: "bold",
+                },
+              },
+            },
+            animation: {
+              animateRotate: true,
+              duration: 2000,
+            },
+          },
+        });
+      }
+
+      // Show section
+      function showSection(sectionName) {
+        // Hide all sections
+        document.querySelectorAll(".section").forEach((section) => {
+          section.classList.add("hidden");
+        });
+
+        // Remove active class from all nav items
+        document.querySelectorAll(".nav-item").forEach((item) => {
+          item.classList.remove(
+            "bg-gradient-to-r",
+            "from-blue-600",
+            "to-indigo-600",
+            "text-white"
+          );
+          item.classList.add("bg-gray-200", "text-gray-700");
+        });
+
+        // Show selected section
+        document
+          .getElementById(sectionName + "-section")
+          .classList.remove("hidden");
+
+        // Add active class to selected nav item
+        const activeNav = document.getElementById("nav-" + sectionName);
+        activeNav.classList.add(
+          "bg-gradient-to-r",
+          "from-blue-600",
+          "to-indigo-600",
+          "text-white"
+        );
+        activeNav.classList.remove("bg-gray-200", "text-gray-700");
+
+        // Load section-specific content
+        if (sectionName === "history") {
+          displayHistory();
+        }
+      }
+
+      // Display history
+      function displayHistory() {
+        const container = document.getElementById("historyList");
+
+        if (evaluations.length === 0) {
+          container.innerHTML =
+            '<p class="text-gray-500 text-center py-8">No hay evaluaciones previas</p>';
+          return;
+        }
+
+        // Create trend chart
+        createTrendChart();
+
+        // Display evaluation list
+        const sortedEvaluations = evaluations.sort(
+          (a, b) => new Date(b.date) - new Date(a.date)
+        );
+
+        container.innerHTML = sortedEvaluations
+          .map(
+            (evaluation) => `
+                <div class="card-hover bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">${
+                              evaluation.patientName
+                            }</h3>
+                            <p class="text-sm text-gray-600">Edad: ${
+                              evaluation.patientAge
+                            } años</p>
+                            <p class="text-sm text-gray-600">Fecha: ${new Date(
+                              evaluation.date
+                            ).toLocaleDateString("es-ES")}</p>
+                        </div>
+                        <button onclick="viewEvaluation(${
+                          evaluation.id
+                        })" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            👁️ Ver Detalles
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        ${Object.values(evaluation.scores)
+                          .map(
+                            (score) => `
+                            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                <div class="text-sm font-semibold text-gray-600">${score.name}</div>
+                                <div class="text-xl font-bold" style="color: ${score.color}">${score.total}</div>
+                                <div class="text-xs text-gray-500">${score.percentage}%</div>
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      // Create trend chart
+      function createTrendChart() {
+        const ctx = document.getElementById("trendChart").getContext("2d");
+
+        if (trendChart) {
+          trendChart.destroy();
+        }
+
+        if (evaluations.length < 2) {
+          ctx.canvas.parentElement.innerHTML =
+            '<p class="text-gray-500 text-center py-8">Se necesitan al menos 2 evaluaciones para mostrar tendencias</p>';
+          return;
+        }
+
+        const sortedEvaluations = evaluations.sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        );
+        const labels = sortedEvaluations.map((e) =>
+          new Date(e.date).toLocaleDateString("es-ES")
+        );
+
+        const datasets = Object.keys(questionnaire.categories).map(
+          (categoryKey) => {
+            const category = questionnaire.categories[categoryKey];
+            return {
+              label: category.name,
+              data: sortedEvaluations.map((e) =>
+                e.scores[categoryKey] ? e.scores[categoryKey].total : 0
+              ),
+              borderColor: category.color,
+              backgroundColor: category.color + "20",
+              borderWidth: 3,
+              fill: false,
+              tension: 0.4,
+              pointRadius: 6,
+              pointHoverRadius: 8,
+            };
+          }
+        );
+
+        trendChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: datasets,
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "top",
+                labels: {
+                  usePointStyle: true,
+                  padding: 20,
+                },
+              },
+              title: {
+                display: true,
+                text: "Evolución de Puntuaciones a lo Largo del Tiempo",
+                font: {
+                  size: 16,
+                  weight: "bold",
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Puntuaci��n",
+                },
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: "Fecha de Evaluación",
+                },
+              },
+            },
+            animation: {
+              duration: 2000,
+              easing: "easeInOutQuart",
+            },
+          },
+        });
+      }
+
+      // View specific evaluation
+      function viewEvaluation(id) {
+        const evaluation = evaluations.find((e) => e.id === id);
+        if (evaluation) {
+          displayResults(evaluation);
+          showSection("results");
+        }
+      }
+
+      // Export results
+      function exportResults() {
+        if (evaluations.length === 0) {
+          alert("⚠️ No hay evaluaciones para exportar");
+          return;
+        }
+
+        const latestEvaluation = evaluations[evaluations.length - 1];
+
+        let exportContent = `REPORTE DE EVALUACIÓN PSIQUIÁTRICA
+Dr. Humberto Nicolini
+
+========================================
+INFORMACIÓN DEL PACIENTE:
+Nombre: ${latestEvaluation.patientName}
+Edad: ${latestEvaluation.patientAge} años
+Fecha de Evaluación: ${new Date(latestEvaluation.date).toLocaleDateString(
+          "es-ES"
+        )}
+
+========================================
+PUNTUACIONES POR CATEGORÍA:
+
+${Object.values(latestEvaluation.scores)
+  .map(
+    (score) =>
+      `${score.name}:
+  - Puntuación Total: ${score.total}
+  - Promedio: ${score.average}
+  - Porcentaje: ${score.percentage}%
+  - Nivel: ${getSeverityLevel(parseFloat(score.percentage)).label}
+`
+  )
+  .join("\n")}
+
+========================================
+RECOMENDACIONES DE MEDICACIÓN:
+
+${generateMedicationText(latestEvaluation.scores)}
+
+========================================
+Generado el: ${new Date().toLocaleDateString(
+          "es-ES"
+        )} a las ${new Date().toLocaleTimeString("es-ES")}
+`;
+
+        const blob = new Blob([exportContent], {
+          type: "text/plain;charset=utf-8",
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = `Evaluacion_${latestEvaluation.patientName.replace(
+          /\s+/g,
+          "_"
+        )}_${latestEvaluation.date}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        alert("✅ Resultados exportados exitosamente");
+      }
+
+      // Generate medication text
+      function generateMedicationText(scores) {
+        const generalScore = scores.general
+          ? parseFloat(scores.general.percentage)
+          : 0;
+        const totalScore = scores.general ? scores.general.total : 0;
+
+        if (totalScore <= 25) {
+          return "- Estado Leve: Terapia psicológica, ejercicio regular, técnicas de relajación";
+        } else if (totalScore <= 45) {
+          return "- Estado Moderado: ISRS (Sertralina 50mg/día) + Terapia cognitivo-conductual";
+        } else if (totalScore <= 60) {
+          return "- Estado Moderado-Severo: ISRS (Sertralina 100mg/día) + Ansiolítico PRN + Terapia intensiva";
+        } else {
+          return "- Estado Severo: Combinación de antidepresivos + Estabilizador del ánimo + Seguimiento semanal";
+        }
+      }
+
+      // Print results
+      function printResults() {
+        window.print();
+      }
+
+      // Save evaluations to localStorage
+      function saveEvaluations() {
+        localStorage.setItem(
+          "psychiatricEvaluations",
+          JSON.stringify(evaluations)
+        );
+      }
+
+      // Load evaluations from localStorage
+      function loadEvaluations() {
+        const saved = localStorage.getItem("psychiatricEvaluations");
+        if (saved) {
+          evaluations = JSON.parse(saved);
+        }
+      }
+
+      // Reset questionnaire
+      function resetQuestionnaire() {
+        if (
+          confirm(
+            "¿Estás seguro de reiniciar el cuestionario? Se perderán todas las respuestas actuales."
+          )
+        ) {
+          currentQuestionIndex = 0;
+          answers = {};
+          document.getElementById("patientName").value = "";
+          document.getElementById("patientAge").value = "";
+          document.getElementById("evaluationDate").value = new Date()
+            .toISOString()
+            .split("T")[0];
+          displayCurrentQuestion();
+          showSection("questionnaire");
+        }
+      }
+
+      // Initialize the application when the page loads
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9b0b10f267e7ae0b',t:'MTc2NjE5MDk5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
