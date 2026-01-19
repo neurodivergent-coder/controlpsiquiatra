@@ -1,14 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema de Evaluación Psiquiátrica - Dr. Humberto Nicolini</title>
+    <script src="/_sdk/element_sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
       }
 
       .card-hover {
@@ -61,6 +67,88 @@
         height: 400px;
         margin: 20px 0;
       }
+
+      /* Chatbot styles */
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .chat-message {
+        animation: slideIn 0.3s ease-out;
+      }
+
+      .typing-indicator {
+        display: inline-flex;
+        gap: 4px;
+      }
+
+      .typing-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #9ca3af;
+        animation: typing 1.4s infinite;
+      }
+
+      .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes typing {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.7;
+        }
+        30% {
+          transform: translateY(-10px);
+          opacity: 1;
+        }
+      }
+
+      .chat-messages-area {
+        height: 500px;
+        overflow-y: auto;
+      }
+
+      .chat-messages-area::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .chat-messages-area::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+      }
+
+      .chat-messages-area::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+
+      .chat-messages-area::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      .quick-action-btn {
+        transition: all 0.3s ease;
+      }
+
+      .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
     </style>
     <style>
       @view-transition {
@@ -68,248 +156,331 @@
       }
     </style>
     <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
-    <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
   </head>
-  <body
-    class="bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-screen"
-  >
-    <!-- Header -->
-    <header class="bg-white shadow-lg border-b-4 border-blue-600">
-      <div class="container mx-auto px-6 py-4">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center space-x-4">
-            <div
-              class="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center"
-            >
-              <span class="text-white font-bold text-xl">🧠</span>
+  <body class="h-full bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div class="h-full flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow-lg border-b-4 border-blue-600">
+        <div class="container mx-auto px-6 py-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+              <div
+                class="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center"
+              >
+                <span class="text-white font-bold text-xl">🧠</span>
+              </div>
+              <div>
+                <h1 class="text-2xl font-bold text-gray-800">
+                  Dr. Humberto Nicolini
+                </h1>
+                <p class="text-sm text-gray-600">
+                  Psiquiatra por parte del Consejo Mexicano de Psiquiatría
+                </p>
+                <p class="text-sm text-gray-600">
+                  Evaluación TDA/TDAH - Doctorado en Ciencias Médicas UNAM
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-800">
-                Dr. Humberto Nicolini
-              </h1>
-              <p class="text-sm text-gray-600">
-                Psiquiatra por parte del Consejo Mexicano de Psiquiatría
-              </p>
-              <p class="text-sm text-gray-600">
-                Doctorado en Ciencias Médicas - UNAM
-              </p>
+            <div class="text-right">
+              <p class="text-sm text-gray-600" id="currentDate"></p>
+              <p
+                class="text-lg font-semibold text-blue-600"
+                id="currentTime"
+              ></p>
             </div>
           </div>
-          <div class="text-right">
-            <p class="text-sm text-gray-600" id="currentDate"></p>
-            <p class="text-lg font-semibold text-blue-600" id="currentTime"></p>
+        </div>
+      </header>
+      <div class="flex-1 overflow-auto">
+        <div class="container mx-auto px-6 py-8">
+          <!-- Navigation -->
+          <nav class="mb-8">
+            <div class="flex flex-wrap gap-4 justify-center">
+              <button
+                onclick="showSection('questionnaire')"
+                class="nav-item bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg"
+                id="nav-questionnaire"
+              >
+                Cuestionario de Evaluación
+              </button>
+              <button
+                onclick="showSection('results')"
+                class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
+                id="nav-results"
+              >
+                Resultados y Gráficos
+              </button>
+              <button
+                onclick="showSection('history')"
+                class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
+                id="nav-history"
+              >
+                Historial de Evaluaciones
+              </button>
+              <button
+                onclick="showSection('chatbot')"
+                class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
+                id="nav-chatbot"
+              >
+                🤖 Asistente Virtual
+              </button>
+            </div>
+          </nav>
+          <!-- Questionnaire Section -->
+          <div id="questionnaire-section" class="section fade-in">
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+              <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">
+                  Evaluación TDA/TDAH
+                </h2>
+                <p class="text-gray-600">
+                  Responde cada pregunta según tu experiencia HOY o en las
+                  últimas 24 horas
+                </p>
+                <div class="mt-4">
+                  <div
+                    class="bg-gray-200 rounded-full h-3 w-full max-w-md mx-auto"
+                  >
+                    <div
+                      id="progressBar"
+                      class="progress-bar bg-blue-600 h-3 rounded-full"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-2">
+                    Pregunta <span id="currentQuestion">0</span> de
+                    <span id="totalQuestions">0</span>
+                  </p>
+                </div>
+              </div>
+              <!-- Patient Info -->
+              <div
+                id="patientInfo"
+                class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-200"
+              >
+                <h3 class="text-lg font-bold text-blue-800 mb-4">
+                  👤 Información del Paciente
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    id="patientName"
+                    placeholder="Nombre completo"
+                    class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    id="patientAge"
+                    placeholder="Edad"
+                    class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="date"
+                    id="evaluationDate"
+                    class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <!-- Questions Container -->
+              <div id="questionsContainer">
+                <!-- Questions will be generated here -->
+              </div>
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between mt-8">
+                <button
+                  id="prevBtn"
+                  onclick="previousQuestion()"
+                  class="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  disabled
+                >
+                  ← Anterior
+                </button>
+                <button
+                  id="nextBtn"
+                  onclick="nextQuestion()"
+                  class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  Siguiente →
+                </button>
+                <button
+                  id="finishBtn"
+                  onclick="finishEvaluation()"
+                  class="hidden bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  Finalizar Evaluación
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </header>
-    <div class="container mx-auto px-6 py-8">
-      <!-- Navigation -->
-      <nav class="mb-8">
-        <div class="flex flex-wrap gap-4 justify-center">
-          <button
-            onclick="showSection('questionnaire')"
-            class="nav-item bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg"
-            id="nav-questionnaire"
-          >
-            📋 Cuestionario de Evaluación
-          </button>
-          <button
-            onclick="showSection('results')"
-            class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
-            id="nav-results"
-          >
-            📊 Resultados y Gráficos
-          </button>
-          <button
-            onclick="showSection('history')"
-            class="nav-item bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-lg"
-            id="nav-history"
-          >
-            📈 Historial de Evaluaciones
-          </button>
-        </div>
-      </nav>
-      <!-- Questionnaire Section -->
-      <div id="questionnaire-section" class="section fade-in">
-        <div class="bg-white rounded-2xl shadow-lg p-8">
-          <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">
-              📋 Evaluación Psiquiátrica
-            </h2>
-            <p class="text-gray-600">
-              Responde cada pregunta según tu experiencia en las últimas 2
-              semanas
-            </p>
-            <div class="mt-4">
-              <div class="bg-gray-200 rounded-full h-3 w-full max-w-md mx-auto">
+          <!-- Results Section -->
+          <div id="results-section" class="section hidden">
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+              <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
+                Resultados de la Evaluación
+              </h2>
+              <!-- Current Results -->
+              <div id="currentResults" class="mb-8">
+                <div class="max-w-4xl mx-auto">
+                  <!-- Scores Summary -->
+                  <div
+                    class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200"
+                  >
+                    <h3 class="text-xl font-bold text-blue-800 mb-4">
+                      Puntuaciones por Categoría
+                    </h3>
+                    <div id="scoresDisplay" class="space-y-4">
+                      <!-- Scores will be displayed here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Charts -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Bar Chart -->
                 <div
-                  id="progressBar"
-                  class="progress-bar bg-blue-600 h-3 rounded-full"
-                  style="width: 0%"
-                ></div>
-              </div>
-              <p class="text-sm text-gray-600 mt-2">
-                Pregunta <span id="currentQuestion">0</span> de
-                <span id="totalQuestions">0</span>
-              </p>
-            </div>
-          </div>
-          <!-- Patient Info -->
-          <div
-            id="patientInfo"
-            class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-200"
-          >
-            <h3 class="text-lg font-bold text-blue-800 mb-4">
-              👤 Información del Paciente
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                id="patientName"
-                placeholder="Nombre completo"
-                class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                id="patientAge"
-                placeholder="Edad"
-                class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="date"
-                id="evaluationDate"
-                class="p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          <!-- Questions Container -->
-          <div id="questionsContainer">
-            <!-- Questions will be generated here -->
-          </div>
-          <!-- Navigation Buttons -->
-          <div class="flex justify-between mt-8">
-            <button
-              id="prevBtn"
-              onclick="previousQuestion()"
-              class="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50"
-              disabled
-            >
-              ← Anterior
-            </button>
-            <button
-              id="nextBtn"
-              onclick="nextQuestion()"
-              class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              Siguiente →
-            </button>
-            <button
-              id="finishBtn"
-              onclick="finishEvaluation()"
-              class="hidden bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
-            >
-              ✅ Finalizar Evaluación
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- Results Section -->
-      <div id="results-section" class="section hidden">
-        <div class="bg-white rounded-2xl shadow-lg p-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
-            📊 Resultados de la Evaluación
-          </h2>
-          <!-- Current Results -->
-          <div id="currentResults" class="mb-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <!-- Scores Summary -->
-              <div
-                class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200"
-              >
-                <h3 class="text-xl font-bold text-blue-800 mb-4">
-                  📈 Puntuaciones por Categoría
-                </h3>
-                <div id="scoresDisplay" class="space-y-4">
-                  <!-- Scores will be displayed here -->
+                  class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
+                >
+                  <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    Gráfico de Barras - Puntuaciones
+                  </h3>
+                  <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                  </div>
+                </div>
+                <!-- Pie Chart -->
+                <div
+                  class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
+                >
+                  <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    Distribución
+                  </h3>
+                  <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                  </div>
                 </div>
               </div>
-              <!-- Medication Recommendations -->
+              <!-- Export Options -->
+              <div class="mt-8 text-center">
+                <button
+                  onclick="exportToExcel()"
+                  class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors mr-4"
+                >
+                  Exportar a Excel
+                </button>
+                <button
+                  onclick="printResults()"
+                  class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  🖨️ Imprimir Reporte
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- History Section -->
+          <div id="history-section" class="section hidden">
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+              <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
+                📈 Historial de Evaluaciones
+              </h2>
+              <!-- Trend Chart -->
+              <div class="mb-8">
+                <div
+                  class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200"
+                >
+                  <h3 class="text-xl font-bold text-purple-800 mb-4">
+                    📈 Tendencias a lo Largo del Tiempo
+                  </h3>
+                  <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              <!-- History List -->
+              <div id="historyList" class="space-y-4">
+                <!-- History items will be displayed here -->
+              </div>
+            </div>
+          </div>
+          <!-- Chatbot Section -->
+          <div id="chatbot-section" class="section hidden">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <!-- Chat Header -->
               <div
-                class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200"
+                class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4"
               >
-                <h3 class="text-xl font-bold text-green-800 mb-4">
-                  💊 Recomendaciones de Medicación
-                </h3>
-                <div id="medicationRecommendations" class="space-y-3">
-                  <!-- Recommendations will be displayed here -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div
+                      class="w-12 h-12 bg-white rounded-full flex items-center justify-center"
+                    >
+                      <span class="text-3xl">🤖</span>
+                    </div>
+                    <div>
+                      <h2 class="text-xl font-bold">
+                        Asistente Virtual Dr. Nicolini
+                      </h2>
+                      <p class="text-sm text-blue-100">
+                        En línea • Responde en segundos
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onclick="clearChat()"
+                    class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm transition-all"
+                  >
+                    🗑️ Limpiar
+                  </button>
+                </div>
+              </div>
+              <!-- Messages Area -->
+              <div id="chatMessages" class="chat-messages-area bg-gray-50 p-6">
+                <!-- Messages will appear here -->
+              </div>
+              <!-- Quick Actions -->
+              <div class="px-6 py-3 bg-white border-t border-gray-200">
+                <p class="text-xs text-gray-500 mb-2">🚀 Acciones rápidas:</p>
+                <div class="flex flex-wrap gap-2" id="quickActions">
+                  <!-- Quick action buttons -->
+                </div>
+              </div>
+              <!-- Input Area -->
+              <div class="bg-white px-6 py-4 border-t border-gray-200">
+                <form onsubmit="sendChatMessage(event)" class="flex gap-3">
+                  <input
+                    type="text"
+                    id="chatInput"
+                    placeholder="Escribe tu mensaje aquí..."
+                    class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                    autocomplete="off"
+                  />
+                  <button
+                    type="submit"
+                    class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+                  >
+                    📤 Enviar
+                  </button>
+                </form>
+              </div>
+              <!-- Contact Info Footer -->
+              <div class="bg-blue-50 px-6 py-3 border-t border-blue-100">
+                <div
+                  class="flex flex-col md:flex-row justify-between items-center text-sm text-gray-700"
+                >
+                  <p>
+                    📍 Luis Carracci 107, Extremadura Insurgentes, Benito
+                    Juárez, 03740 CDMX
+                  </p>
+                  <p class="mt-2 md:mt-0">
+                    📞
+                    <a
+                      href="tel:+525537123224"
+                      class="text-blue-600 hover:underline font-semibold"
+                      >+52 55 3712 3224</a
+                    >
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-          <!-- Charts -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Bar Chart -->
-            <div
-              class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
-            >
-              <h3 class="text-lg font-bold text-gray-800 mb-4">
-                📊 Gráfico de Barras - Puntuaciones
-              </h3>
-              <div class="chart-container">
-                <canvas id="barChart"></canvas>
-              </div>
-            </div>
-            <!-- Pie Chart -->
-            <div
-              class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
-            >
-              <h3 class="text-lg font-bold text-gray-800 mb-4">
-                🥧 Distribución de Síntomas
-              </h3>
-              <div class="chart-container">
-                <canvas id="pieChart"></canvas>
-              </div>
-            </div>
-          </div>
-          <!-- Export Options -->
-          <div class="mt-8 text-center">
-            <button
-              onclick="exportResults()"
-              class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors mr-4"
-            >
-              📄 Exportar Resultados
-            </button>
-            <button
-              onclick="printResults()"
-              class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
-            >
-              🖨️ Imprimir Reporte
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- History Section -->
-      <div id="history-section" class="section hidden">
-        <div class="bg-white rounded-2xl shadow-lg p-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
-            📈 Historial de Evaluaciones
-          </h2>
-          <!-- Trend Chart -->
-          <div class="mb-8">
-            <div
-              class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200"
-            >
-              <h3 class="text-xl font-bold text-purple-800 mb-4">
-                📈 Tendencias a lo Largo del Tiempo
-              </h3>
-              <div class="chart-container">
-                <canvas id="trendChart"></canvas>
-              </div>
-            </div>
-          </div>
-          <!-- History List -->
-          <div id="historyList" class="space-y-4">
-            <!-- History items will be displayed here -->
           </div>
         </div>
       </div>
@@ -321,42 +492,132 @@
       let evaluations = [];
       let barChart, pieChart, trendChart;
 
-      // Questionnaire data - Dr. Humberto Nicolini's Questions
+      // Questionnaire data - Dr. Humberto Nicolini's TDA/TDAH Specific Questions
       const questionnaire = {
         categories: {
-          general: {
-            name: "Evaluación General",
+          atencion: {
+            name: "🧠 Atención y Foco",
             color: "#3b82f6",
             questions: [
-              "¿Cómo te sientes en general?",
-              "¿Cómo has estado durmiendo?",
-              "¿Cómo está tu apetito?",
-              "¿Cómo están tus niveles de energía?",
-              "¿Cómo está tu concentración?",
-              "¿Cómo está tu estado de ánimo?",
-              "¿Has tenido pensamientos negativos?",
-              "¿Cómo están tus relaciones interpersonales?",
-              "¿Has tenido ansiedad o nerviosismo?",
-              "¿Has tenido cambios en tu peso?",
-              "¿Cómo está tu motivación para actividades diarias?",
-              "¿Has tenido dolores de cabeza o tensión?",
-              "¿Cómo manejas el estrés actualmente?",
-              "¿Has tenido cambios en tu libido?",
-              "¿Cómo está tu autoestima?",
-              "¿Has tenido pensamientos de hacerte daño?",
-              "¿Cómo está tu capacidad para tomar decisiones?",
-              "¿Has tenido episodios de llanto?",
-              "¿Cómo está tu paciencia con otros?",
-              "¿Has tenido sensación de vacío o tristeza?",
-              "¿Cómo está tu capacidad para disfrutar actividades?",
-              "¿Has tenido problemas de memoria?",
-              "¿Cómo está tu nivel de irritabilidad?",
-              "¿Has tenido cambios en tus patrones de sueño?",
-              "¿Cómo está tu esperanza hacia el futuro?",
+              "¿Pude concentrarme en tareas básicas hoy?",
+              "¿Me distraje fácilmente incluso en cosas que me interesan?",
+              "¿Sentí 'niebla mental' o saturación cognitiva?",
+              "¿Me costó empezar tareas aunque sabía qué hacer?",
+              "¿Me costó terminar lo que empecé?",
+            ],
+          },
+          organizacion: {
+            name: "⏱️ Organización y Tiempo",
+            color: "#8b5cf6",
+            questions: [
+              "¿Perder la noción del tiempo con facilidad?",
+              "¿Llegué tarde o evité compromisos por desorganización?",
+              "¿Pude priorizar lo importante vs. lo urgente?",
+              "¿Me sentí abrumada al ver muchas tareas juntas?",
+            ],
+          },
+          energia: {
+            name: "⚡ Energía y Activación",
+            color: "#f59e0b",
+            questions: [
+              "¿Cómo estuvo mi nivel de energía hoy?",
+              "¿Hubo picos de hiperfoco?",
+              "¿Pasé de hiperactividad mental a agotamiento?",
+              "¿Sentí inquietud física o mental constante?",
+            ],
+          },
+          emociones: {
+            name: "🌊 Regulación Emocional",
+            color: "#10b981",
+            questions: [
+              "¿Mis emociones se sintieron intensas o difíciles de regular?",
+              "¿Me frustré fácilmente?",
+              "¿Sentí culpa o autocrítica excesiva?",
+              "¿Tuve momentos de ansiedad sin causa clara?",
+            ],
+          },
+          sueno: {
+            name: "😴 Sueño y Cuerpo",
+            color: "#6366f1",
+            questions: [
+              "¿Dormí bien?",
+              "¿Me costó conciliar el sueño por pensamientos acelerados?",
+              "¿Me desperté cansada?",
+              "¿Comí de forma más o menos regular?",
+            ],
+          },
+          medicacion: {
+            name: "💊 Medicación",
+            color: "#ec4899",
+            questions: [
+              "¿Tomé la medicación como estaba indicada?",
+              "¿Noté efectos positivos?",
+              "¿Efectos secundarios? (ansiedad, insomnio, bajón, etc.)",
+              "¿La dosis se sintió adecuada hoy?",
+            ],
+          },
+          autopercepcion: {
+            name: "🌱 Autopercepción",
+            color: "#14b8a6",
+            questions: [
+              "¿Hoy me sentí funcional?",
+              "¿Logré algo importante hoy?",
+              "¿Hubo algo que me costó mucho?",
+              "¿Me traté con amabilidad?",
             ],
           },
         },
       };
+
+      // Chatbot Knowledge Base
+      const botKnowledge = {
+        doctorInfo: {
+          nombre: "Dr. José Humberto Nicolini Sánchez",
+          titulo: "Médico Cirujano",
+          universidad: "Universidad Nacional Autónoma de México (UNAM)",
+          especialidad: "Psiquiatría - Consejo Mexicano de Psiquiatría",
+          doctorado: "Doctorado en Ciencias Médicas - UNAM",
+        },
+        especialidades: [
+          "Trastorno Obsesivo Compulsivo (TOC)",
+          "Trastorno Bipolar",
+          "Conducta Suicida",
+          "Clínica de Atención y Memoria",
+          "Ansiedad",
+          "Esquizofrenia",
+          "Alzheimer",
+          "Estimulación Magnética Transcraneal",
+        ],
+        ubicacion: {
+          clinica: "Grupo Médico Carracci",
+          direccion:
+            "Luis Carracci 107, Extremadura Insurgentes, Benito Juárez, 03740 Ciudad de México, CDMX",
+          telefono: "+52 55 3712 3224",
+          ciudad: "Ciudad de México",
+        },
+        tratamientos: {
+          toc: "El Dr. Nicolini es experto en Trastorno Obsesivo Compulsivo. Utiliza terapias especializadas y medicación cuando es necesario.",
+          bipolar:
+            "El Trastorno Bipolar requiere tratamiento especializado. El Dr. Nicolini cuenta con amplia experiencia en el manejo de episodios maníacos y depresivos.",
+          ansiedad:
+            "Los trastornos de ansiedad son tratables. El Dr. Nicolini ofrece evaluación completa y tratamiento integral.",
+          esquizofrenia:
+            "La esquizofrenia requiere manejo especializado. El Dr. Nicolini ofrece tratamiento integral.",
+          alzheimer:
+            "En la Clínica de Atención y Memoria, el Dr. Nicolini atiende casos de Alzheimer y otros trastornos neurodegenerativos.",
+          suicida:
+            "Si tienes pensamientos suicidas, el Dr. Nicolini puede ayudarte. Llama al +52 55 3712 3224.",
+          tms: "La Estimulación Magnética Transcraneal es un tratamiento no invasivo para depresión resistente. El Dr. Nicolini ofrece esta técnica avanzada.",
+        },
+      };
+
+      const quickActionsBot = [
+        { text: "📅 Agendar cita", action: "agendar" },
+        { text: "🏥 Especialidades", action: "especialidades" },
+        { text: "📍 Ubicación", action: "ubicacion" },
+        { text: "👨‍⚕️ Sobre el Dr.", action: "doctor" },
+        { text: "📞 Contacto", action: "contacto" },
+      ];
 
       // Flatten questions for easier navigation
       let allQuestions = [];
@@ -441,14 +702,14 @@
                         }</p>
                     </div>
                     
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
                         ${generateScaleButtons(currentQuestionIndex)}
                     </div>
                     
                     <div class="mt-6 text-center">
                         <div class="flex justify-between text-sm text-gray-500">
-                            <span>Nunca / Nada</span>
-                            <span>Siempre / Mucho</span>
+                            <span>0 = Nada / Nunca</span>
+                            <span>5 = Mucho / Siempre</span>
                         </div>
                     </div>
                 </div>
@@ -467,13 +728,15 @@
         }
       }
 
-      // Generate scale buttons (0-3 scale)
+      // Generate scale buttons (0-5 scale)
       function generateScaleButtons(questionIndex) {
         const scales = [
-          { value: 0, label: "0", desc: "Nunca" },
-          { value: 1, label: "1", desc: "Poco" },
-          { value: 2, label: "2", desc: "Bastante" },
-          { value: 3, label: "3", desc: "Mucho" },
+          { value: 0, label: "0" },
+          { value: 1, label: "1" },
+          { value: 2, label: "2" },
+          { value: 3, label: "3" },
+          { value: 4, label: "4" },
+          { value: 5, label: "5" },
         ];
 
         return scales
@@ -490,10 +753,7 @@
                 ? "bg-blue-600 text-white border-blue-600"
                 : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
             }">
-                        <div class="text-2xl font-bold mb-1">${
-                          scale.label
-                        }</div>
-                        <div class="text-xs">${scale.desc}</div>
+                        <div class="text-2xl font-bold">${scale.label}</div>
                     </button>
                 `;
           })
@@ -503,7 +763,7 @@
       // Select answer
       function selectAnswer(questionIndex, value) {
         answers[questionIndex] = value;
-        displayCurrentQuestion(); // Refresh to show selection
+        displayCurrentQuestion();
       }
 
       // Update progress bar
@@ -516,7 +776,9 @@
       // Navigation functions
       function nextQuestion() {
         if (answers[currentQuestionIndex] === undefined) {
-          alert("⚠️ Por favor responde la pregunta actual antes de continuar");
+          showInlineMessage(
+            " Por favor responde la pregunta actual antes de continuar"
+          );
           return;
         }
 
@@ -533,10 +795,25 @@
         }
       }
 
+      // Show inline message (no browser dialog)
+      function showInlineMessage(message) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className =
+          "fixed top-4 right-4 bg-yellow-500 text-white px-6 py-4 rounded-lg shadow-lg z-50";
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+          messageDiv.remove();
+        }, 3000);
+      }
+
       // Finish evaluation
       function finishEvaluation() {
         if (answers[currentQuestionIndex] === undefined) {
-          alert("⚠️ Por favor responde la pregunta actual antes de finalizar");
+          showInlineMessage(
+            "⚠️ Por favor responde la pregunta actual antes de finalizar"
+          );
           return;
         }
 
@@ -545,7 +822,9 @@
         const evaluationDate = document.getElementById("evaluationDate").value;
 
         if (!patientName || !patientAge || !evaluationDate) {
-          alert("⚠️ Por favor completa la información del paciente");
+          showInlineMessage(
+            "⚠️ Por favor completa la información del paciente"
+          );
           return;
         }
 
@@ -570,7 +849,7 @@
         displayResults(evaluation);
         showSection("results");
 
-        alert("✅ Evaluación completada exitosamente");
+        showInlineMessage("✅ Evaluación completada exitosamente");
       }
 
       // Calculate scores by category
@@ -596,7 +875,7 @@
               questionCount > 0 ? (totalScore / questionCount).toFixed(1) : 0,
             percentage:
               questionCount > 0
-                ? ((totalScore / (questionCount * 3)) * 100).toFixed(1)
+                ? ((totalScore / (questionCount * 5)) * 100).toFixed(1)
                 : 0,
             color: category.color,
             questionCount: questionCount,
@@ -609,7 +888,6 @@
       // Display results
       function displayResults(evaluation) {
         displayScores(evaluation.scores);
-        displayMedicationRecommendations(evaluation.scores);
         createCharts(evaluation.scores);
       }
 
@@ -619,97 +897,22 @@
 
         container.innerHTML = Object.values(scores)
           .map((score) => {
-            const severity = getSeverityLevel(parseFloat(score.percentage));
             return `
                     <div class="p-4 bg-white rounded-lg border-l-4 shadow-sm" style="border-left-color: ${score.color}">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="font-bold text-gray-800">${score.name}</h4>
-                            <span class="text-2xl font-bold" style="color: ${score.color}">${score.total}</span>
+                            <span class="text-2xl font-bold" style="color: ${score.color}">${score.percentage}%</span>
                         </div>
                         <div class="text-sm text-gray-600 mb-2">
-                            Promedio: ${score.average} | Porcentaje: ${score.percentage}%
+                            Puntuación Total: ${score.total} | Promedio: ${score.average}
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="h-2 rounded-full transition-all duration-1000" 
                                  style="width: ${score.percentage}%; background-color: ${score.color}"></div>
                         </div>
-                        <div class="mt-2 text-xs font-semibold ${severity.class}">${severity.label}</div>
                     </div>
                 `;
           })
-          .join("");
-      }
-
-      // Get severity level
-      function getSeverityLevel(percentage) {
-        if (percentage <= 25) return { label: "Leve", class: "text-green-600" };
-        if (percentage <= 50)
-          return { label: "Moderado", class: "text-yellow-600" };
-        if (percentage <= 75)
-          return { label: "Alto", class: "text-orange-600" };
-        return { label: "Severo", class: "text-red-600" };
-      }
-
-      // Display medication recommendations
-      function displayMedicationRecommendations(scores) {
-        const container = document.getElementById("medicationRecommendations");
-        const recommendations = [];
-
-        // General evaluation recommendations based on total score
-        const generalScore = scores.general
-          ? parseFloat(scores.general.percentage)
-          : 0;
-        const totalScore = scores.general ? scores.general.total : 0;
-
-        if (totalScore <= 25) {
-          recommendations.push({
-            type: "Estado Leve (0-25 puntos)",
-            medication:
-              "Terapia psicológica, ejercicio regular, técnicas de relajación",
-            color: "green",
-          });
-        } else if (totalScore <= 45) {
-          recommendations.push({
-            type: "Estado Moderado (26-45 puntos)",
-            medication:
-              "ISRS: Sertralina 50mg/día + Terapia cognitivo-conductual",
-            color: "yellow",
-          });
-        } else if (totalScore <= 60) {
-          recommendations.push({
-            type: "Estado Moderado-Severo (46-60 puntos)",
-            medication:
-              "ISRS: Sertralina 100mg/día + Ansiolítico PRN + Terapia intensiva",
-            color: "orange",
-          });
-        } else {
-          recommendations.push({
-            type: "Estado Severo (61+ puntos)",
-            medication:
-              "Combinación de antidepresivos + Estabilizador del ánimo + Seguimiento semanal",
-            color: "red",
-          });
-        }
-
-        // Additional recommendations based on specific high scores
-        if (generalScore > 70) {
-          recommendations.push({
-            type: "Seguimiento Urgente",
-            medication:
-              "Evaluación de riesgo suicida + Hospitalización si es necesario",
-            color: "red",
-          });
-        }
-
-        container.innerHTML = recommendations
-          .map(
-            (rec) => `
-                <div class="p-3 bg-white rounded-lg border-l-4 border-${rec.color}-500">
-                    <h5 class="font-bold text-gray-800">${rec.type}</h5>
-                    <p class="text-sm text-gray-600">${rec.medication}</p>
-                </div>
-            `
-          )
           .join("");
       }
 
@@ -756,7 +959,7 @@
               },
               title: {
                 display: true,
-                text: "Puntuaciones por Categoría",
+                text: "Puntuaciones por Categoría TDA/TDAH",
                 font: {
                   size: 16,
                   weight: "bold",
@@ -822,7 +1025,7 @@
               },
               title: {
                 display: true,
-                text: "Distribución de Síntomas (%)",
+                text: "Distribución de Síntomas TDA/TDAH (%)",
                 font: {
                   size: 16,
                   weight: "bold",
@@ -839,12 +1042,10 @@
 
       // Show section
       function showSection(sectionName) {
-        // Hide all sections
         document.querySelectorAll(".section").forEach((section) => {
           section.classList.add("hidden");
         });
 
-        // Remove active class from all nav items
         document.querySelectorAll(".nav-item").forEach((item) => {
           item.classList.remove(
             "bg-gradient-to-r",
@@ -855,12 +1056,10 @@
           item.classList.add("bg-gray-200", "text-gray-700");
         });
 
-        // Show selected section
         document
           .getElementById(sectionName + "-section")
           .classList.remove("hidden");
 
-        // Add active class to selected nav item
         const activeNav = document.getElementById("nav-" + sectionName);
         activeNav.classList.add(
           "bg-gradient-to-r",
@@ -870,9 +1069,13 @@
         );
         activeNav.classList.remove("bg-gray-200", "text-gray-700");
 
-        // Load section-specific content
         if (sectionName === "history") {
           displayHistory();
+        } else if (sectionName === "chatbot") {
+          const messagesArea = document.getElementById("chatMessages");
+          if (messagesArea.children.length === 0) {
+            initChatbot();
+          }
         }
       }
 
@@ -882,14 +1085,12 @@
 
         if (evaluations.length === 0) {
           container.innerHTML =
-            '<p class="text-gray-500 text-center py-8">No hay evaluaciones previas</p>';
+            '<p class="text-gray-500 text-center py-8">No hay evaluaciones previas en esta sesión</p>';
           return;
         }
 
-        // Create trend chart
         createTrendChart();
 
-        // Display evaluation list
         const sortedEvaluations = evaluations.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
         );
@@ -995,7 +1196,7 @@
               },
               title: {
                 display: true,
-                text: "Evolución de Puntuaciones a lo Largo del Tiempo",
+                text: "Evolución de Síntomas TDA/TDAH",
                 font: {
                   size: 16,
                   weight: "bold",
@@ -1007,19 +1208,18 @@
                 beginAtZero: true,
                 title: {
                   display: true,
-                  text: "Puntuaci��n",
+                  text: "Puntuación",
                 },
               },
               x: {
                 title: {
                   display: true,
-                  text: "Fecha de Evaluación",
+                  text: "Fecha",
                 },
               },
             },
             animation: {
               duration: 2000,
-              easing: "easeInOutQuart",
             },
           },
         });
@@ -1034,126 +1234,281 @@
         }
       }
 
-      // Export results
-      function exportResults() {
-        if (evaluations.length === 0) {
-          alert("⚠️ No hay evaluaciones para exportar");
-          return;
-        }
-
-        const latestEvaluation = evaluations[evaluations.length - 1];
-
-        let exportContent = `REPORTE DE EVALUACIÓN PSIQUIÁTRICA
-Dr. Humberto Nicolini
-
-========================================
-INFORMACIÓN DEL PACIENTE:
-Nombre: ${latestEvaluation.patientName}
-Edad: ${latestEvaluation.patientAge} años
-Fecha de Evaluación: ${new Date(latestEvaluation.date).toLocaleDateString(
-          "es-ES"
-        )}
-
-========================================
-PUNTUACIONES POR CATEGORÍA:
-
-${Object.values(latestEvaluation.scores)
-  .map(
-    (score) =>
-      `${score.name}:
-  - Puntuación Total: ${score.total}
-  - Promedio: ${score.average}
-  - Porcentaje: ${score.percentage}%
-  - Nivel: ${getSeverityLevel(parseFloat(score.percentage)).label}
-`
-  )
-  .join("\n")}
-
-========================================
-RECOMENDACIONES DE MEDICACIÓN:
-
-${generateMedicationText(latestEvaluation.scores)}
-
-========================================
-Generado el: ${new Date().toLocaleDateString(
-          "es-ES"
-        )} a las ${new Date().toLocaleTimeString("es-ES")}
-`;
-
-        const blob = new Blob([exportContent], {
-          type: "text/plain;charset=utf-8",
-        });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.href = url;
-        link.download = `Evaluacion_${latestEvaluation.patientName.replace(
-          /\s+/g,
-          "_"
-        )}_${latestEvaluation.date}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        alert("✅ Resultados exportados exitosamente");
-      }
-
-      // Generate medication text
-      function generateMedicationText(scores) {
-        const generalScore = scores.general
-          ? parseFloat(scores.general.percentage)
-          : 0;
-        const totalScore = scores.general ? scores.general.total : 0;
-
-        if (totalScore <= 25) {
-          return "- Estado Leve: Terapia psicológica, ejercicio regular, técnicas de relajación";
-        } else if (totalScore <= 45) {
-          return "- Estado Moderado: ISRS (Sertralina 50mg/día) + Terapia cognitivo-conductual";
-        } else if (totalScore <= 60) {
-          return "- Estado Moderado-Severo: ISRS (Sertralina 100mg/día) + Ansiolítico PRN + Terapia intensiva";
-        } else {
-          return "- Estado Severo: Combinación de antidepresivos + Estabilizador del ánimo + Seguimiento semanal";
-        }
-      }
-
       // Print results
       function printResults() {
         window.print();
       }
 
-      // Save evaluations to localStorage
+      // Save evaluations to sessionStorage
       function saveEvaluations() {
-        localStorage.setItem(
+        sessionStorage.setItem(
           "psychiatricEvaluations",
           JSON.stringify(evaluations)
         );
       }
 
-      // Load evaluations from localStorage
+      // Load evaluations from sessionStorage
       function loadEvaluations() {
-        const saved = localStorage.getItem("psychiatricEvaluations");
+        const saved = sessionStorage.getItem("psychiatricEvaluations");
         if (saved) {
           evaluations = JSON.parse(saved);
         }
       }
 
-      // Reset questionnaire
-      function resetQuestionnaire() {
-        if (
-          confirm(
-            "¿Estás seguro de reiniciar el cuestionario? Se perderán todas las respuestas actuales."
-          )
-        ) {
-          currentQuestionIndex = 0;
-          answers = {};
-          document.getElementById("patientName").value = "";
-          document.getElementById("patientAge").value = "";
-          document.getElementById("evaluationDate").value = new Date()
-            .toISOString()
-            .split("T")[0];
-          displayCurrentQuestion();
-          showSection("questionnaire");
+      // Export to Excel
+      function exportToExcel() {
+        if (evaluations.length === 0) {
+          showInlineMessage("⚠️ No hay evaluaciones para exportar");
+          return;
         }
+
+        let csvContent = "\ufeff";
+        csvContent +=
+          "SISTEMA DE EVALUACIÓN TDA/TDAH - Dr. Humberto Nicolini\n\n";
+        csvContent +=
+          "Fecha,Nombre del Paciente,Edad,Categoría,Puntuación Total,Promedio,Porcentaje\n";
+
+        evaluations.forEach((evaluation) => {
+          Object.values(evaluation.scores).forEach((score) => {
+            csvContent += `${evaluation.date},${evaluation.patientName},${evaluation.patientAge},${score.name},${score.total},${score.average},${score.percentage}%\n`;
+          });
+        });
+
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = `Evaluaciones_TDA_${
+          new Date().toISOString().split("T")[0]
+        }.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showInlineMessage("✅ Datos exportados exitosamente");
+      }
+
+      // ==================== CHATBOT FUNCTIONS ====================
+
+      // Initialize chatbot
+      function initChatbot() {
+        addChatMessage(
+          "bot",
+          `¡Hola! 👋 Soy el asistente virtual del ${botKnowledge.doctorInfo.nombre}.\n\nEstoy aquí para ayudarte con:\n\n• 📋 Información sobre especialidades\n• 📅 Cómo agendar una cita\n• 📍 Ubicación de la clínica\n• 💊 Tratamientos disponibles\n\n¿En qué puedo ayudarte?`
+        );
+        renderQuickActionsBot();
+      }
+
+      // Render quick actions for bot
+      function renderQuickActionsBot() {
+        const container = document.getElementById("quickActions");
+        container.innerHTML = quickActionsBot
+          .map(
+            (action) => `
+                <button onclick="handleQuickActionBot('${action.action}')" class="quick-action-btn bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                    ${action.text}
+                </button>
+            `
+          )
+          .join("");
+      }
+
+      // Handle quick actions
+      function handleQuickActionBot(action) {
+        const responses = {
+          agendar: `📅 AGENDAR CITA\n\nPara agendar tu cita:\n\n📞 LLAMAR:\n+52 55 3712 3224\n\n📍 ACUDIR:\nGrupo Médico Carracci\nLuis Carracci 107, CDMX\n\n¿Tienes alguna otra pregunta?`,
+
+          especialidades: `🏥 ESPECIALIDADES:\n\n${botKnowledge.especialidades
+            .map((esp, i) => `${i + 1}. ${esp}`)
+            .join("\n")}\n\n¿Sobre cuál te gustaría saber más?`,
+
+          ubicacion: `📍 UBICACIÓN:\n\n🏥 ${botKnowledge.ubicacion.clinica}\n\n📍 ${botKnowledge.ubicacion.direccion}\n\n📞 ${botKnowledge.ubicacion.telefono}\n\n¿Necesitas más información?`,
+
+          doctor: `👨‍⚕️ SOBRE EL DR. NICOLINI\n\n${botKnowledge.doctorInfo.nombre}\n\n🎓 Formación:\n• ${botKnowledge.doctorInfo.titulo} - ${botKnowledge.doctorInfo.universidad}\n• ${botKnowledge.doctorInfo.especialidad}\n• ${botKnowledge.doctorInfo.doctorado}\n\n¿Te gustaría agendar una cita?`,
+
+          contacto: `📞 CONTACTO:\n\n📱 ${botKnowledge.ubicacion.telefono}\n\n📍 ${botKnowledge.ubicacion.direccion}\n\n¿En qué más puedo ayudarte?`,
+        };
+
+        addChatMessage(
+          "user",
+          quickActionsBot.find((a) => a.action === action).text
+        );
+        setTimeout(() => {
+          addChatMessage("bot", responses[action]);
+        }, 800);
+      }
+
+      // Send chat message
+      function sendChatMessage(event) {
+        event.preventDefault();
+
+        const input = document.getElementById("chatInput");
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        addChatMessage("user", message);
+        input.value = "";
+
+        setTimeout(() => {
+          showTypingIndicatorBot();
+
+          setTimeout(() => {
+            hideTypingIndicatorBot();
+            const response = generateBotResponse(message);
+            addChatMessage("bot", response);
+          }, 1500);
+        }, 500);
+      }
+
+      // Generate bot response
+      function generateBotResponse(userMessage) {
+        const message = userMessage.toLowerCase();
+
+        if (message.match(/hola|buenos días|buenas tardes|hey/)) {
+          return `¡Hola! 👋 ¿En qué puedo ayudarte?\n\nPuedo darte información sobre:\n• Especialidades del Dr. Nicolini\n• Cómo agendar cita\n• Ubicación\n• Tratamientos`;
+        }
+
+        if (message.match(/cita|agendar|consulta|reservar/)) {
+          return `📅 Para agendar:\n\n📞 Llama al: +52 55 3712 3224\n\n📍 O acude a:\nGrupo Médico Carracci\nLuis Carracci 107, CDMX\n\n¿Necesitas la ubicación exacta?`;
+        }
+
+        if (message.match(/ubicación|dirección|donde|dónde/)) {
+          return `📍 UBICACIÓN:\n\n${botKnowledge.ubicacion.clinica}\n${botKnowledge.ubicacion.direccion}\n\n📞 ${botKnowledge.ubicacion.telefono}`;
+        }
+
+        if (message.match(/teléfono|telefono|contacto|llamar/)) {
+          return `📞 CONTACTO:\n\nTeléfono: ${botKnowledge.ubicacion.telefono}\n\n¡Llama para agendar tu cita!`;
+        }
+
+        if (message.match(/especialidad|especialidades|trata/)) {
+          return `🏥 ESPECIALIDADES:\n\n${botKnowledge.especialidades
+            .map((esp, i) => `${i + 1}. ${esp}`)
+            .join("\n")}\n\n¿Sobre cuál quieres saber más?`;
+        }
+
+        if (message.match(/toc|obsesivo|compulsivo/)) {
+          return `🔄 TOC:\n\n${botKnowledge.tratamientos.toc}\n\n📞 Agenda: +52 55 3712 3224`;
+        }
+
+        if (message.match(/bipolar/)) {
+          return `🎭 TRASTORNO BIPOLAR:\n\n${botKnowledge.tratamientos.bipolar}\n\n +52 55 3712 3224`;
+        }
+
+        if (message.match(/ansiedad|ansioso|estrés/)) {
+          return `😰 ANSIEDAD:\n\n${botKnowledge.tratamientos.ansiedad}\n\n📞 +52 55 3712 3224`;
+        }
+
+        if (message.match(/esquizofrenia/)) {
+          return `🧩 ESQUIZOFRENIA:\n\n${botKnowledge.tratamientos.esquizofrenia}\n\n📞 +52 55 3712 3224`;
+        }
+
+        if (message.match(/alzheimer|memoria/)) {
+          return `🧠 ALZHEIMER Y MEMORIA:\n\n${botKnowledge.tratamientos.alzheimer}\n\n📞 +52 55 3712 3224`;
+        }
+
+        if (message.match(/suicid/)) {
+          return `🆘 AYUDA:\n\n${botKnowledge.tratamientos.suicida}\n\n🚨 Emergencia: 911\nLínea de la Vida: 800 911 2000`;
+        }
+
+        if (message.match(/estimulación|tms|transcraneal/)) {
+          return `⚡ TMS:\n\n${botKnowledge.tratamientos.tms}\n\n📞 Más info: +52 55 3712 3224`;
+        }
+
+        if (message.match(/doctor|médico|nicolini/)) {
+          return `👨‍⚕️ ${botKnowledge.doctorInfo.nombre}\n\n🎓 ${botKnowledge.doctorInfo.especialidad}\n🎓 ${botKnowledge.doctorInfo.doctorado}\n\n📞 +52 55 3712 3224`;
+        }
+
+        if (message.match(/precio|costo|cuanto/)) {
+          return `💰 COSTOS:\n\nPara información sobre costos:\n📞 Llama al: +52 55 3712 3224\n\nEl personal te informará sobre honorarios y formas de pago.`;
+        }
+
+        if (message.match(/gracias/)) {
+          return `¡De nada! 😊\n\n¿Algo más?\n\n📞 +52 55 3712 3224`;
+        }
+
+        if (message.match(/adiós|adios|bye/)) {
+          return `¡Hasta pronto! 👋\n\n📞 +52 55 3712 3224\n📍 Luis Carracci 107, CDMX`;
+        }
+
+        return `Entiendo. 🤔\n\nPuedo ayudarte con:\n• 📅 Agendar citas\n• 🏥 Especialidades\n• 📍 Ubicación\n• 💊 Tratamientos\n\n¿Sobre qué quieres saber?\n\n📞 O llama: +52 55 3712 3224`;
+      }
+
+      // Add message to chat
+      function addChatMessage(sender, text) {
+        const messagesDiv = document.getElementById("chatMessages");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `chat-message mb-4 ${
+          sender === "user" ? "text-right" : "text-left"
+        }`;
+
+        const isBot = sender === "bot";
+        const bubbleClass = isBot
+          ? "bg-white border-2 border-blue-200 text-gray-800"
+          : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
+
+        messageDiv.innerHTML = `
+                <div class="inline-block max-w-lg">
+                    ${isBot ? '<div class="flex items-start space-x-2">' : ""}
+                    ${
+                      isBot
+                        ? '<div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-white text-sm">🤖</span></div>'
+                        : ""
+                    }
+                    <div class="${bubbleClass} px-4 py-3 rounded-2xl shadow-md ${
+          isBot ? "rounded-tl-none" : "rounded-tr-none"
+        }">
+                        <p class="text-sm whitespace-pre-line">${text}</p>
+                    </div>
+                    ${isBot ? "</div>" : ""}
+                </div>
+            `;
+
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Show typing indicator
+      function showTypingIndicatorBot() {
+        const messagesDiv = document.getElementById("chatMessages");
+        const typingDiv = document.createElement("div");
+        typingDiv.id = "typingIndicatorBot";
+        typingDiv.className = "chat-message mb-4 text-left";
+        typingDiv.innerHTML = `
+                <div class="inline-block">
+                    <div class="flex items-start space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white text-sm">🤖</span>
+                        </div>
+                        <div class="bg-white border-2 border-blue-200 px-4 py-3 rounded-2xl rounded-tl-none shadow-md">
+                            <div class="typing-indicator">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        messagesDiv.appendChild(typingDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Hide typing indicator
+      function hideTypingIndicatorBot() {
+        const indicator = document.getElementById("typingIndicatorBot");
+        if (indicator) {
+          indicator.remove();
+        }
+      }
+
+      // Clear chat
+      function clearChat() {
+        document.getElementById("chatMessages").innerHTML = "";
+        initChatbot();
       }
 
       // Initialize the application when the page loads
@@ -1166,7 +1521,7 @@ Generado el: ${new Date().toLocaleDateString(
           if (b) {
             var d = b.createElement("script");
             d.innerHTML =
-              "window.__CF$cv$params={r:'9b0b10f267e7ae0b',t:'MTc2NjE5MDk5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+              "window.__CF$cv$params={r:'9c0229b3e008ac50',t:'MTc2ODc4MTk5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
             b.getElementsByTagName("head")[0].appendChild(d);
           }
         }
